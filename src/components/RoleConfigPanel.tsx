@@ -12,16 +12,11 @@ import {
   AccordionDetails,
   IconButton,
   Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Tooltip,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
   Palette as PaletteIcon,
   Code as CodeIcon,
 } from '@mui/icons-material';
@@ -113,6 +108,42 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
     ));
   };
 
+  const handleMoveMapping = (ruleId: string, index: number, direction: 'up' | 'down') => {
+    const rule = rules.find(rule => rule.id === ruleId);
+    if (!rule || rule.mappings.length <= 1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= rule.mappings.length) return;
+
+    const newMappings = [...rule.mappings];
+    [newMappings[index], newMappings[newIndex]] = [newMappings[newIndex], newMappings[index]];
+    
+    onRulesChange(rules.map(r =>
+      r.id === ruleId ? { ...r, mappings: newMappings } : r
+    ));
+  };
+
+  const handleInsertMapping = (ruleId: string, index: number) => {
+    const newMapping: PatternMapping = {
+      pattern: '',
+      type: 'string',
+      color: '#000000'
+    };
+    
+    onRulesChange(rules.map(rule =>
+      rule.id === ruleId
+        ? {
+            ...rule,
+            mappings: [
+              ...rule.mappings.slice(0, index + 1),
+              newMapping,
+              ...rule.mappings.slice(index + 1)
+            ]
+          }
+        : rule
+    ));
+  };
+
   const handleMappingChange = (ruleId: string, index: number, updates: Partial<PatternMapping>) => {
     onRulesChange(rules.map(rule =>
       rule.id === ruleId
@@ -195,16 +226,18 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
             </AccordionSummary>
 
             <AccordionDetails>
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleAddMapping(rule.id)}
-                  sx={{ mb: 2 }}
-                >
-                  添加角色映射
-                </Button>
-              </Box>
+              {rule.mappings.length === 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleAddMapping(rule.id)}
+                    sx={{ mb: 2 }}
+                  >
+                    添加角色映射
+                  </Button>
+                </Box>
+              )}
 
               {rule.mappings.map((mapping, index) => (
                 <Paper key={index} sx={{ p: 2, mb: 2 }}>
@@ -247,7 +280,12 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
                     </Box>
 
                     <ActionButtons
+                      onMoveUp={() => handleMoveMapping(rule.id, index, 'up')}
+                      onMoveDown={() => handleMoveMapping(rule.id, index, 'down')}
+                      onInsert={() => handleInsertMapping(rule.id, index)}
                       onDelete={() => handleDeleteMapping(rule.id, index)}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < rule.mappings.length - 1}
                       size="small"
                     />
                   </Box>

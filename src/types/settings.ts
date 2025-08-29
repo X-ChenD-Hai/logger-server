@@ -44,49 +44,6 @@ export interface TagRule {
 // 配置类型
 export type ConfigType = 'levels' | 'roles' | 'tags';
 
-// 默认日志等级规则
-export const defaultLevelRules: LevelRule[] = [
-  {
-    id: 'default-levels',
-    name: '默认日志等级',
-    enabled: true,
-    mappings: [
-      { level: 0, name: 'TRACE', color: '#9e9e9e' },
-      { level: 1, name: 'DEBUG', color: '#2196f3' },
-      { level: 2, name: 'WARNING', color: '#ff9800' },
-      { level: 3, name: 'ERROR', color: '#f44336' },
-      { level: 4, name: 'CRITICAL', color: '#d32f2f' }
-    ]
-  }
-];
-
-// 默认角色规则
-export const defaultRoleRules: RoleRule[] = [
-  {
-    id: 'default-roles',
-    name: '默认角色',
-    enabled: true,
-    mappings: [
-      { pattern: 'admin', type: 'string', color: '#ff5722' },
-      { pattern: 'user', type: 'string', color: '#4caf50' },
-      { pattern: 'system', type: 'string', color: '#673ab7' }
-    ]
-  }
-];
-
-// 默认标签规则
-export const defaultTagRules: TagRule[] = [
-  {
-    id: 'default-tags',
-    name: '默认标签',
-    enabled: true,
-    mappings: [
-      { pattern: 'important', type: 'string', color: '#ffeb3b' },
-      { pattern: 'notification', type: 'string', color: '#00bcd4' },
-      { pattern: 'security', type: 'string', color: '#e91e63' }
-    ]
-  }
-];
 
 // 创建新的日志等级规则
 export const createLevelRule = (): Omit<LevelRule, 'id'> => {
@@ -238,12 +195,9 @@ const getDefaultLevelColor = (level: number): string => {
   const levelName = getDefaultLevelName(level);
   const logLevelColors = {
     TRACE: '#9e9e9e',
-    DEBUG: '#2196f3',
-    WARNING: '#ff9800',
-    ERROR: '#f44336',
-    CRITICAL: '#d32f2f',
+
   };
-  return logLevelColors[levelName as keyof typeof logLevelColors] || logLevelColors.DEBUG;
+  return logLevelColors[levelName as keyof typeof logLevelColors] || logLevelColors.TRACE;
 };
 
 // 应用日志等级规则到等级Chip

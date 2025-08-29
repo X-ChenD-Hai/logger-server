@@ -12,16 +12,11 @@ import {
   AccordionDetails,
   IconButton,
   Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Tooltip,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
   Palette as PaletteIcon,
   Code as CodeIcon,
 } from '@mui/icons-material';
@@ -83,7 +78,7 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
   };
 
   const handleRuleChange = (ruleId: string, updates: Partial<TagRule>) => {
-    onRulesChange(rules.map(rule => 
+    onRulesChange(rules.map(rule =>
       rule.id === ruleId ? { ...rule, ...updates } : rule
     ));
   };
@@ -98,35 +93,71 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
       type: 'string',
       color: '#000000'
     };
-    onRulesChange(rules.map(rule => 
-      rule.id === ruleId 
+    onRulesChange(rules.map(rule =>
+      rule.id === ruleId
         ? { ...rule, mappings: [...rule.mappings, newMapping] }
         : rule
     ));
   };
 
   const handleDeleteMapping = (ruleId: string, index: number) => {
-    onRulesChange(rules.map(rule => 
-      rule.id === ruleId 
+    onRulesChange(rules.map(rule =>
+      rule.id === ruleId
         ? { ...rule, mappings: rule.mappings.filter((_, i) => i !== index) }
         : rule
     ));
   };
 
-  const handleMappingChange = (ruleId: string, index: number, updates: Partial<PatternMapping>) => {
-    onRulesChange(rules.map(rule => 
-      rule.id === ruleId 
+  const handleMoveMapping = (ruleId: string, index: number, direction: 'up' | 'down') => {
+    const rule = rules.find(rule => rule.id === ruleId);
+    if (!rule || rule.mappings.length <= 1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= rule.mappings.length) return;
+
+    const newMappings = [...rule.mappings];
+    [newMappings[index], newMappings[newIndex]] = [newMappings[newIndex], newMappings[index]];
+
+    onRulesChange(rules.map(r =>
+      r.id === ruleId ? { ...r, mappings: newMappings } : r
+    ));
+  };
+
+  const handleInsertMapping = (ruleId: string, index: number) => {
+    const newMapping: PatternMapping = {
+      pattern: '',
+      type: 'string',
+      color: '#000000'
+    };
+
+    onRulesChange(rules.map(rule =>
+      rule.id === ruleId
         ? {
-            ...rule,
-            mappings: rule.mappings.map((mapping, i) => 
-              i === index ? { ...mapping, ...updates } : mapping
-            )
-          }
+          ...rule,
+          mappings: [
+            ...rule.mappings.slice(0, index + 1),
+            newMapping,
+            ...rule.mappings.slice(index + 1)
+          ]
+        }
         : rule
     ));
   };
 
-  const handleAccordionChange = (ruleId: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+  const handleMappingChange = (ruleId: string, index: number, updates: Partial<PatternMapping>) => {
+    onRulesChange(rules.map(rule =>
+      rule.id === ruleId
+        ? {
+          ...rule,
+          mappings: rule.mappings.map((mapping, i) =>
+            i === index ? { ...mapping, ...updates } : mapping
+          )
+        }
+        : rule
+    ));
+  };
+
+  const handleAccordionChange = (ruleId: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedRule(isExpanded ? ruleId : false);
   };
 
@@ -195,16 +226,18 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
             </AccordionSummary>
 
             <AccordionDetails>
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleAddMapping(rule.id)}
-                  sx={{ mb: 2 }}
-                >
-                  添加标签映射
-                </Button>
-              </Box>
+              {rule.mappings.length === 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleAddMapping(rule.id)}
+                    sx={{ mb: 2 }}
+                  >
+                    添加标签映射
+                  </Button>
+                </Box>
+              )}
 
               {rule.mappings.map((mapping, index) => (
                 <Paper key={index} sx={{ p: 2, mb: 2 }}>
@@ -212,8 +245,8 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
                     <TextField
                       label={mapping.type === 'regex' ? '正则表达式' : '标签模式'}
                       value={mapping.pattern}
-                      onChange={(e) => handleMappingChange(rule.id, index, { 
-                        pattern: e.target.value 
+                      onChange={(e) => handleMappingChange(rule.id, index, {
+                        pattern: e.target.value
                       })}
                       sx={{ flex: 1, minWidth: 200 }}
                       placeholder={mapping.type === 'regex' ? '^important.*$' : 'important'}
@@ -222,8 +255,8 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
                           <Tooltip title={mapping.type === 'regex' ? '切换为字符串匹配' : '切换为正则表达式匹配'}>
                             <IconButton
                               size="small"
-                              onClick={() => handleMappingChange(rule.id, index, { 
-                                type: mapping.type === 'regex' ? 'string' : 'regex' 
+                              onClick={() => handleMappingChange(rule.id, index, {
+                                type: mapping.type === 'regex' ? 'string' : 'regex'
                               })}
                               sx={{ mr: -1 }}
                             >
@@ -233,21 +266,26 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
                         )
                       }}
                     />
-                    
+
                     <Box sx={{ display: 'flex', alignItems: 'center', width: 200 }}>
                       <PaletteIcon sx={{ mr: 1, color: mapping.color }} />
                       <TextField
                         label="颜色"
                         value={mapping.color}
-                        onChange={(e) => handleMappingChange(rule.id, index, { 
-                          color: e.target.value 
+                        onChange={(e) => handleMappingChange(rule.id, index, {
+                          color: e.target.value
                         })}
                         fullWidth
                       />
                     </Box>
-                    
+
                     <ActionButtons
+                      onMoveUp={() => handleMoveMapping(rule.id, index, 'up')}
+                      onMoveDown={() => handleMoveMapping(rule.id, index, 'down')}
+                      onInsert={() => handleInsertMapping(rule.id, index)}
                       onDelete={() => handleDeleteMapping(rule.id, index)}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < rule.mappings.length - 1}
                       size="small"
                     />
                   </Box>

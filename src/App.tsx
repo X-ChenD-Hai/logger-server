@@ -18,9 +18,6 @@ import {
   LevelRule,
   RoleRule,
   TagRule,
-  defaultLevelRules,
-  defaultRoleRules,
-  defaultTagRules
 } from "./types/settings";
 
 interface ServerStatus {
@@ -110,24 +107,17 @@ function App() {
       const savedLevelRules = await loadConfigFromBackend('levelRules');
       if (savedLevelRules) {
         setLevelRules(savedLevelRules);
-      } else {
-        setLevelRules(defaultLevelRules);
-      }
+      } 
 
       const savedRoleRules = await loadConfigFromBackend('roleRules');
       if (savedRoleRules) {
         setRoleRules(savedRoleRules);
-      } else {
-        setRoleRules(defaultRoleRules);
       }
 
       const savedTagRules = await loadConfigFromBackend('tagRules');
       if (savedTagRules) {
         setTagRules(savedTagRules);
-      } else {
-        setTagRules(defaultTagRules);
       }
-
       setIsConfigLoaded(true);
     };
 

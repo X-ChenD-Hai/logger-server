@@ -25,55 +25,10 @@ export interface ColorRule {
   name: string;
   condition: ColorCondition;
   style: ColorStyle;
-  enabled: boolean;
+  enabled: boolean
 }
 
-// 默认颜色规则
-export const defaultColorRules: ColorRule[] = [
-  {
-    id: 'data-rule',
-    name: '数据日志',
-    condition: {
-      field: 'role',
-      operator: 'equals',
-      value: 'global.label=data'
-    },
-    style: {
-      color: 'green',
-      fontWeight: 'bold'
-    },
-    enabled: true
-  },
-  {
-    id: 'error-rule',
-    name: '错误日志',
-    condition: {
-      field: 'level',
-      operator: 'equals',
-      value: '3' // ERROR level
-    },
-    style: {
-      color: '#d32f2f',
-      fontWeight: 'bold',
-      backgroundColor: '#ffebee'
-    },
-    enabled: true
-  },
-  {
-    id: 'warning-rule',
-    name: '警告日志',
-    condition: {
-      field: 'level',
-      operator: 'equals',
-      value: '2' // WARNING level
-    },
-    style: {
-      color: '#ed6c02',
-      backgroundColor: '#fff3e0'
-    },
-    enabled: true
-  }
-];
+
 
 // 检查条件是否匹配
 export const matchCondition = (message: LogMessage, condition: ColorCondition): boolean => {
