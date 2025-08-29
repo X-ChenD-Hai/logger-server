@@ -18,6 +18,8 @@ import {
   LightMode as LightModeIcon,
   Save as SaveIcon,
   FolderOpen as FolderOpenIcon,
+  Search as SearchIcon,
+  SearchOff as SearchOffIcon,
 } from '@mui/icons-material';
 interface ServerStatus {
   running: boolean;
@@ -38,6 +40,8 @@ interface AppHeaderProps {
   onSaveLogs: () => void;
   onLoadLogs: () => void;
   statusMessage?: string;
+  showSearchBar: boolean;
+  setShowSearchBar: (show: boolean) => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -54,6 +58,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onSaveLogs,
   onLoadLogs,
   statusMessage,
+  showSearchBar,
+  setShowSearchBar,
 }) => {
   return (
     <AppBar position="static" elevation={0}>
@@ -144,6 +150,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           title="Load logs from file"
         >
           <FolderOpenIcon />
+        </IconButton>
+
+        {/* Search/Filter Toggle */}
+        <IconButton
+          color="inherit"
+          onClick={() => setShowSearchBar(!showSearchBar)}
+          size="small"
+          sx={{ mr: 1 }}
+          title={showSearchBar ? "隐藏搜索筛选栏" : "显示搜索筛选栏"}
+        >
+          {showSearchBar ? <SearchOffIcon /> : <SearchIcon />}
         </IconButton>
 
         {/* Dark Mode Toggle */}

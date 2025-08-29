@@ -38,6 +38,7 @@ function App() {
   const [filters, setFilters] = useState<FilterConfig[]>([]);
   const [sortField, setSortField] = useState("time");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showSearchBar, setShowSearchBar] = useState(true);
 
   // 保存配置到后端存储
   const saveConfigToBackend = async (key: string, value: any) => {
@@ -281,6 +282,8 @@ function App() {
           onSaveLogs={saveLogMessages}
           onLoadLogs={loadLogMessages}
           statusMessage={statusMessage}
+          showSearchBar={showSearchBar}
+          setShowSearchBar={setShowSearchBar}
         />
 
         {showSettings ? (
@@ -316,6 +319,7 @@ function App() {
                 setSortField(field);
                 setSortDirection(direction);
               }}
+              showSearchBar={showSearchBar}
             />
           </Container>
         )}

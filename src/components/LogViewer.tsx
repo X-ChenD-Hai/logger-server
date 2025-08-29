@@ -44,6 +44,7 @@ interface LogViewerProps {
   sortField: string;
   sortDirection: 'asc' | 'desc';
   onSortChange: (field: string, direction: 'asc' | 'desc') => void;
+  showSearchBar: boolean;
 }
 
 export const LogViewer: React.FC<LogViewerProps> = ({
@@ -58,6 +59,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   sortField,
   sortDirection,
   onSortChange,
+  showSearchBar,
 }) => {
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [showFilters, setShowFilters] = useState(false);
@@ -205,158 +207,160 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
       {/* Search and Filter Controls */}
-      <Paper sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Search Input */}
-          <TextField
-            placeholder="搜索日志内容..."
-            value={localSearch}
-            onChange={handleSearchChange}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: localSearch && (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={handleSearchClear}>
-                    <ClearIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            size="small"
-            sx={{ minWidth: 300 }}
-          />
+      {showSearchBar && (
+        <Paper sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Search Input */}
+            <TextField
+              placeholder="搜索日志内容..."
+              value={localSearch}
+              onChange={handleSearchChange}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: localSearch && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={handleSearchClear}>
+                      <ClearIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              size="small"
+              sx={{ minWidth: 300 }}
+            />
 
-          {/* Sort Control */}
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>排序字段</InputLabel>
-            <Select
-              value={sortField}
-              label="排序字段"
-              onChange={(e: SelectChangeEvent) => handleSortChange(e.target.value)}
-            >
-              {sortableFields.map((field) => (
-                <MenuItem key={field.value} value={field.value}>
-                  {field.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Sort Direction Toggle */}
-          <IconButton
-            onClick={() => handleSortChange(sortField)}
-            title={sortDirection === 'asc' ? '升序' : '降序'}
-          >
-            {sortDirection === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
-          </IconButton>
-
-          {/* Filter Toggle */}
-          <IconButton
-            onClick={() => setShowFilters(!showFilters)}
-            color={filters.length > 0 ? 'primary' : 'default'}
-            title="显示筛选器"
-          >
-            <FilterListIcon />
-          </IconButton>
-
-          {/* Results Count */}
-          <Typography variant="body2" color="text.secondary">
-            {filteredAndSortedMessages.length} / {messages.length} 条日志
-          </Typography>
-        </Box>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              添加筛选器
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>字段</InputLabel>
-                <Select
-                  value={filterField}
-                  label="字段"
-                  onChange={(e: SelectChangeEvent) => setFilterField(e.target.value)}
-                >
-                  <MenuItem value="messages">消息内容</MenuItem>
-                  <MenuItem value="file">文件</MenuItem>
-                  <MenuItem value="function">函数</MenuItem>
-                  <MenuItem value="level">等级</MenuItem>
-                  <MenuItem value="process_id">进程ID</MenuItem>
-                  <MenuItem value="thread_id">线程ID</MenuItem>
-                  <MenuItem value="role">角色</MenuItem>
-                  <MenuItem value="label">标签</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>操作符</InputLabel>
-                <Select
-                  value={filterOperator}
-                  label="操作符"
-                  onChange={(e: SelectChangeEvent) => setFilterOperator(e.target.value as any)}
-                >
-                  <MenuItem value="contains">包含</MenuItem>
-                  <MenuItem value="equals">等于</MenuItem>
-                  <MenuItem value="startsWith">开头为</MenuItem>
-                  <MenuItem value="endsWith">结尾为</MenuItem>
-                </Select>
-              </FormControl>
-
-              <Autocomplete
-                freeSolo
-                options={getFieldSuggestions}
-                value={filterValue}
-                onChange={(_, newValue) => setFilterValue(newValue || '')}
-                onInputChange={(_, newInputValue) => setFilterValue(newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="值"
-                    size="small"
-                    sx={{ minWidth: 200 }}
-                  />
-                )}
-              />
-
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  if (filterValue.trim()) {
-                    handleAddFilter(filterField, filterValue, filterOperator);
-                    setFilterValue('');
-                  }
-                }}
-                disabled={!filterValue.trim()}
+            {/* Sort Control */}
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>排序字段</InputLabel>
+              <Select
+                value={sortField}
+                label="排序字段"
+                onChange={(e: SelectChangeEvent) => handleSortChange(e.target.value)}
               >
-                添加筛选
-              </Button>
-            </Box>
-          </Box>
-        )}
+                {sortableFields.map((field) => (
+                  <MenuItem key={field.value} value={field.value}>
+                    {field.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-        {/* Active Filters */}
-        {filters.length > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {filters.map((filter, index) => (
-              <Chip
-                key={index}
-                label={`${filter.field}: ${filter.value}`}
-                onDelete={() => handleRemoveFilter(index)}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            ))}
+            {/* Sort Direction Toggle */}
+            <IconButton
+              onClick={() => handleSortChange(sortField)}
+              title={sortDirection === 'asc' ? '升序' : '降序'}
+            >
+              {sortDirection === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+            </IconButton>
+
+            {/* Filter Toggle */}
+            <IconButton
+              onClick={() => setShowFilters(!showFilters)}
+              color={filters.length > 0 ? 'primary' : 'default'}
+              title="显示筛选器"
+            >
+              <FilterListIcon />
+            </IconButton>
+
+            {/* Results Count */}
+            <Typography variant="body2" color="text.secondary">
+              {filteredAndSortedMessages.length} / {messages.length} 条日志
+            </Typography>
           </Box>
-        )}
-      </Paper>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                添加筛选器
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>字段</InputLabel>
+                  <Select
+                    value={filterField}
+                    label="字段"
+                    onChange={(e: SelectChangeEvent) => setFilterField(e.target.value)}
+                  >
+                    <MenuItem value="messages">消息内容</MenuItem>
+                    <MenuItem value="file">文件</MenuItem>
+                    <MenuItem value="function">函数</MenuItem>
+                    <MenuItem value="level">等级</MenuItem>
+                    <MenuItem value="process_id">进程ID</MenuItem>
+                    <MenuItem value="thread_id">线程ID</MenuItem>
+                    <MenuItem value="role">角色</MenuItem>
+                    <MenuItem value="label">标签</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>操作符</InputLabel>
+                  <Select
+                    value={filterOperator}
+                    label="操作符"
+                    onChange={(e: SelectChangeEvent) => setFilterOperator(e.target.value as any)}
+                  >
+                    <MenuItem value="contains">包含</MenuItem>
+                    <MenuItem value="equals">等于</MenuItem>
+                    <MenuItem value="startsWith">开头为</MenuItem>
+                    <MenuItem value="endsWith">结尾为</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Autocomplete
+                  freeSolo
+                  options={getFieldSuggestions}
+                  value={filterValue}
+                  onChange={(_, newValue) => setFilterValue(newValue || '')}
+                  onInputChange={(_, newInputValue) => setFilterValue(newInputValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="值"
+                      size="small"
+                      sx={{ minWidth: 200 }}
+                    />
+                  )}
+                />
+
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    if (filterValue.trim()) {
+                      handleAddFilter(filterField, filterValue, filterOperator);
+                      setFilterValue('');
+                    }
+                  }}
+                  disabled={!filterValue.trim()}
+                >
+                  添加筛选
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* Active Filters */}
+          {filters.length > 0 && (
+            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {filters.map((filter, index) => (
+                <Chip
+                  key={index}
+                  label={`${filter.field}: ${filter.value}`}
+                  onDelete={() => handleRemoveFilter(index)}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
+          )}
+        </Paper>
+      )}
 
       {/* Log Messages */}
       <Paper sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
