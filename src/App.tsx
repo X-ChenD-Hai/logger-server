@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { useState, useEffect, useRef } from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -17,11 +15,9 @@ import {
   TagRule,
 } from "./types/settings";
 import { LogViewer, FilterConfig } from "./components/LogViewer";
-
-interface ServerStatus {
-  running: boolean;
-  port?: number;
-}
+import { ApiClient, ServerStatus } from "./types/api";
+import { TauriClient } from "./api/tauriClient";
+import { WebClient } from "./api/webClient";
 
 function App() {
   const [serverStatus, setServerStatus] = useState<ServerStatus>({ running: false });
@@ -33,145 +29,140 @@ function App() {
   const [tagRules, setTagRules] = useState<TagRule[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterConfig[]>([]);
   const [sortField, setSortField] = useState("time");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showSearchBar, setShowSearchBar] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  // 保存配置到后端存储
-  const saveConfigToBackend = async (key: string, value: any) => {
-    // 在配置加载完成前不保存
-    if (!isConfigLoaded) {
+  // Initialize API client - use ref to prevent recreation on every render
+  const apiClientRef = useRef<ApiClient | null>(null);
+  if (!apiClientRef.current) {
+    console.log("Creating new API client instance");
+    apiClientRef.current = new TauriClient();
+  }
+  const apiClient = apiClientRef.current;
+
+
+  // Load saved configuration rules using API client
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setIsLoadingSettings(true);
+
+        const savedDarkMode = await apiClient.loadSettings('darkMode');
+        if (savedDarkMode !== null) {
+          setDarkMode(savedDarkMode);
+        }
+
+        const savedLevelRules = await apiClient.loadSettings('levelRules');
+        if (savedLevelRules) {
+          setLevelRules(savedLevelRules);
+        }
+
+        const savedRoleRules = await apiClient.loadSettings('roleRules');
+        if (savedRoleRules) {
+          setRoleRules(savedRoleRules);
+        }
+
+        const savedTagRules = await apiClient.loadSettings('tagRules');
+        if (savedTagRules) {
+          setTagRules(savedTagRules);
+        }
+      } catch (error) {
+        console.error("Error loading configuration:", error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    loadConfig();
+  }, [apiClient]);
+
+  // Save dark mode preference using API client (only after initial load)
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      apiClient.saveSettings('darkMode', darkMode);
+    }
+  }, [darkMode, apiClient, isLoadingSettings]);
+
+  // Save configuration rules using API client (only after initial load)
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      apiClient.saveSettings('levelRules', levelRules);
+    }
+  }, [levelRules, apiClient, isLoadingSettings]);
+
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      apiClient.saveSettings('roleRules', roleRules);
+    }
+  }, [roleRules, apiClient, isLoadingSettings]);
+
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      apiClient.saveSettings('tagRules', tagRules);
+    }
+  }, [tagRules, apiClient, isLoadingSettings]);
+
+  // Server functions using API client
+  const checkServerStatus = async () => {
+    try {
+      const running = await apiClient.getServerStatus();
+      setServerStatus({ running });
+    } catch (error) {
+      console.error("Error checking server status:", error);
+      setServerStatus({ running: false });
+    }
+  };
+
+  const startServer = async () => {
+    const portNum = parseInt(port);
+    if (isNaN(portNum) || portNum < 1024 || portNum > 65535) {
+      setStatusMessage("Please enter a valid port number (1024-65535)");
       return;
     }
 
     try {
-      await invoke("save_settings", {
-        key,
-        value: JSON.stringify(value)
-      });
-    } catch (error) {
-      console.error(`Error saving ${key} to backend:`, error);
-    }
-  };
-
-  // 从后端存储加载配置
-  const loadConfigFromBackend = async (key: string): Promise<any> => {
-    try {
-      const result = await invoke("load_settings", { key });
-      // 对于数组类型的配置，空数组表示没有数据，应该返回null
-      if (result === null || result === undefined) {
-        return null;
-      }
-
-      const parsed = JSON.parse(result as string);
-
-      // 如果是数组且为空，也视为没有数据
-      if (Array.isArray(parsed) && parsed.length === 0) {
-        return null;
-      }
-
-      return parsed;
-    } catch (error) {
-      console.error(`Error loading ${key} from backend:`, error);
-      return null;
-    }
-  };
-
-  // 保存深色模式偏好到后端
-  useEffect(() => {
-    saveConfigToBackend('darkMode', darkMode);
-  }, [darkMode]);
-
-  // 保存配置规则到后端
-  useEffect(() => {
-    saveConfigToBackend('levelRules', levelRules);
-  }, [levelRules]);
-
-  useEffect(() => {
-    saveConfigToBackend('roleRules', roleRules);
-  }, [roleRules]);
-
-  useEffect(() => {
-    saveConfigToBackend('tagRules', tagRules);
-  }, [tagRules]);
-
-  // 加载保存的配置规则
-  useEffect(() => {
-    const loadConfigurations = async () => {
-      const savedDarkMode = await loadConfigFromBackend('darkMode');
-      if (savedDarkMode !== null) {
-        setDarkMode(savedDarkMode);
-      }
-
-      const savedLevelRules = await loadConfigFromBackend('levelRules');
-      if (savedLevelRules) {
-        setLevelRules(savedLevelRules);
-      } 
-
-      const savedRoleRules = await loadConfigFromBackend('roleRules');
-      if (savedRoleRules) {
-        setRoleRules(savedRoleRules);
-      }
-
-      const savedTagRules = await loadConfigFromBackend('tagRules');
-      if (savedTagRules) {
-        setTagRules(savedTagRules);
-      }
-      setIsConfigLoaded(true);
-    };
-
-    loadConfigurations();
-  }, []);
-
-  async function checkServerStatus() {
-    try {
-      const running = await invoke("get_server_status");
-      setServerStatus({ running: running as boolean });
-    } catch (error) {
-      console.error("Error checking server status:", error);
-    }
-  }
-
-  async function startServer() {
-    try {
-      const portNum = parseInt(port);
-      if (isNaN(portNum) || portNum < 1024 || portNum > 65535) {
-        setStatusMessage("Please enter a valid port number (1024-65535)");
-        return;
-      }
-
-      const result = await invoke("start_zmq_server", { addr: `tcp://127.0.0.1:${portNum}` });
-      setStatusMessage(result as string);
+      const addr = `tcp://*:${portNum}`;
+      const result = await apiClient.startZmqServer(addr);
+      setStatusMessage(result);
       setServerStatus({ running: true, port: portNum });
-    } catch (error: any) {
-      setStatusMessage(`Error: ${error}`);
-    }
-  }
 
-  async function stopServer() {
-    try {
-      const result = await invoke("stop_zmq_server");
-      setStatusMessage(result as string);
-      setServerStatus({ running: false });
-    } catch (error: any) {
-      setStatusMessage(`Error: ${error}`);
-    }
-  }
+      // For web version, simulate receiving messages
+      if (apiClient instanceof WebClient) {
+        setTimeout(() => {
+          const sampleMessages = [
+            '{"time": 1735478400, "level": 1, "process_id": 1234, "thread_id": 5678, "file": "main.cpp", "line": 42, "function": "main", "messages": ["Application started successfully"]}',
+            '{"time": 1735478401, "level": 2, "process_id": 1234, "thread_id": 5678, "file": "utils.cpp", "line": 15, "function": "processData", "messages": ["Processing data batch 1"]}',
+            '{"time": 1735478402, "level": 3, "process_id": 1234, "thread_id": 5679, "file": "network.cpp", "line": 88, "function": "connect", "messages": ["Connected to server", "Connection established"]}'
+          ];
 
-  async function loadReceivedMessages() {
-    try {
-      const messages = await invoke("get_received_json");
-      setReceivedMessages((messages as string[]).map((m) => LogMessageUtils.parseMessage(m)));
+          const parsedMessages = sampleMessages.map(msg => LogMessageUtils.parseMessage(msg));
+          setReceivedMessages(prev => [...prev, ...parsedMessages]);
+        }, 1000);
+      }
     } catch (error) {
-      console.error("Error loading messages:", error);
+      const errorMsg = `Error starting server: ${error}`;
+      setStatusMessage(errorMsg);
+      console.error(errorMsg);
     }
-  }
+  };
 
+  const stopServer = async () => {
+    try {
+      const result = await apiClient.stopZmqServer();
+      setStatusMessage(result);
+      setServerStatus({ running: false });
+    } catch (error) {
+      const errorMsg = `Error stopping server: ${error}`;
+      setStatusMessage(errorMsg);
+      console.error(errorMsg);
+    }
+  };
 
-  // 保存日志消息到后端
+  // Log message functions using API client
   const saveLogMessages = async () => {
     try {
       if (receivedMessages.length === 0) {
@@ -186,7 +177,8 @@ function App() {
           messages: msg.messages
         })
       );
-      await invoke("save_log_messages", { messages: messageStrings });
+
+      await apiClient.saveLogMessages(messageStrings);
       setStatusMessage("Log messages saved successfully");
       setTimeout(() => setStatusMessage(""), 3000);
       console.log("Log messages saved successfully");
@@ -198,10 +190,9 @@ function App() {
     }
   };
 
-  // 从后端加载日志消息
   const loadLogMessages = async () => {
     try {
-      const messages = await invoke("load_latest_log_messages");
+      const messages = await apiClient.loadLatestLogMessages();
       if (messages && Array.isArray(messages)) {
         const parsedMessages = messages.map((msg: string) => {
           try {
@@ -230,7 +221,22 @@ function App() {
     }
   };
 
-  // 自动保存日志消息（每30秒或当消息数量达到100条时）
+  const clearLogMessages = async () => {
+    try {
+      await apiClient.clearLogMessages();
+      setReceivedMessages([]);
+      setStatusMessage("All logs cleared successfully");
+      setTimeout(() => setStatusMessage(""), 3000);
+      console.log("All logs cleared successfully");
+    } catch (error) {
+      const errorMsg = `Error clearing log messages: ${error}`;
+      setStatusMessage(errorMsg);
+      setTimeout(() => setStatusMessage(""), 5000);
+      console.error(errorMsg);
+    }
+  };
+
+  // Auto-save log messages (every 30 seconds or when message count reaches 100)
   useEffect(() => {
     const autoSaveInterval = setInterval(() => {
       if (receivedMessages.length > 0) {
@@ -241,28 +247,48 @@ function App() {
     return () => clearInterval(autoSaveInterval);
   }, [receivedMessages.length]);
 
-  // 当消息数量达到100条时自动保存
+  // Auto-save when message count reaches 100
   useEffect(() => {
     if (receivedMessages.length >= 100) {
       saveLogMessages();
     }
   }, [receivedMessages.length]);
 
+  // Use a ref to track if we've already set up message reception
+  const messageReceptionSetUp = useRef(false);
+
+  // Set up message reception callback only once
   useEffect(() => {
-    checkServerStatus();
-    loadReceivedMessages();
-    // 应用启动时加载保存的日志消息
-    loadLogMessages();
+    const setupMessageReception = async () => {
+      console.log("Setting up message reception callback...");
+      await apiClient.onMessageReceived((message: string) => {
+        console.log("Message received in App callback:", message);
+        try {
+          const parsedMessage = LogMessageUtils.parseMessage(message);
+          setReceivedMessages(prev => [...prev, parsedMessage]);
+        } catch (error) {
+          messageReceptionSetUp.current = false;
+          console.error("Error parsing received message:", error, message);
+        }
+      });
 
-    const unlisten = listen("message-received", (event) => {
-      console.log("Received message:", event.payload);
-      setReceivedMessages(prev => [...prev, LogMessageUtils.parseMessage(event.payload as string)]);
-    });
-
-    return () => {
-      unlisten.then(f => f());
     };
-  }, []);
+    if (!messageReceptionSetUp.current) {
+      messageReceptionSetUp.current = true;
+      setupMessageReception();
+    }
+  }, [apiClient]);
+
+  // Initialize app - load settings and check server status
+  useEffect(() => {
+    const initializeApp = async () => {
+      await checkServerStatus();
+      // Load saved log messages on app start
+      await loadLogMessages();
+    };
+
+    initializeApp();
+  }, [apiClient]);
 
   return (
     <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
@@ -281,6 +307,7 @@ function App() {
           setDarkMode={setDarkMode}
           onSaveLogs={saveLogMessages}
           onLoadLogs={loadLogMessages}
+          onClearLogs={clearLogMessages}
           statusMessage={statusMessage}
           showSearchBar={showSearchBar}
           setShowSearchBar={setShowSearchBar}

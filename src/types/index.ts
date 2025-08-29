@@ -139,7 +139,7 @@ export const LogMessageUtils = {
    */
   formatTimestamp(timestamp: number): string {
     // Assuming timestamp is in milliseconds
-    const date = new Date(timestamp);
+    const date = new Date(Math.floor(timestamp / 1000));
     return date.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',

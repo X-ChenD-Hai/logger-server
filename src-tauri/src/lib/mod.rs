@@ -19,6 +19,7 @@ pub fn run() {
             load_settings,
             save_log_messages,
             load_latest_log_messages,
+            clear_log_messages,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -84,3 +84,10 @@ pub async fn get_received_json() -> Result<Vec<String>, String> {
     let messages = RECEIVED_MESSAGES.lock().unwrap();
     Ok(messages.clone())
 }
+
+#[tauri::command]
+pub async fn clear_log_messages() -> Result<(), String> {
+    let mut messages = RECEIVED_MESSAGES.lock().unwrap();
+    messages.clear();
+    Ok(())
+}

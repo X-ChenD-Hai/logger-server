@@ -20,6 +20,7 @@ import {
   FolderOpen as FolderOpenIcon,
   Search as SearchIcon,
   SearchOff as SearchOffIcon,
+  DeleteSweep as ClearLogsIcon,
 } from '@mui/icons-material';
 interface ServerStatus {
   running: boolean;
@@ -39,6 +40,7 @@ interface AppHeaderProps {
   setDarkMode: (darkMode: boolean) => void;
   onSaveLogs: () => void;
   onLoadLogs: () => void;
+  onClearLogs: () => void;
   statusMessage?: string;
   showSearchBar: boolean;
   setShowSearchBar: (show: boolean) => void;
@@ -57,6 +59,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   setDarkMode,
   onSaveLogs,
   onLoadLogs,
+  onClearLogs,
   statusMessage,
   showSearchBar,
   setShowSearchBar,
@@ -150,6 +153,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           title="Load logs from file"
         >
           <FolderOpenIcon />
+        </IconButton>
+
+        {/* Clear Logs Button */}
+        <IconButton
+          color="inherit"
+          onClick={onClearLogs}
+          size="small"
+          sx={{ mr: 1 }}
+          title="Clear all logs"
+        >
+          <ClearLogsIcon />
         </IconButton>
 
         {/* Search/Filter Toggle */}
