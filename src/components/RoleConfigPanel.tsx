@@ -17,11 +17,11 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
-  Palette as PaletteIcon,
   Code as CodeIcon,
 } from '@mui/icons-material';
 import { RoleRule, PatternMapping, generateId, createRoleRule } from '../types/settings';
 import { ActionButtons } from './ActionButtons';
+import { ColorEditor } from './ColorEditor';
 
 interface RoleConfigPanelProps {
   rules: RoleRule[];
@@ -117,7 +117,7 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
 
     const newMappings = [...rule.mappings];
     [newMappings[index], newMappings[newIndex]] = [newMappings[newIndex], newMappings[index]];
-    
+
     onRulesChange(rules.map(r =>
       r.id === ruleId ? { ...r, mappings: newMappings } : r
     ));
@@ -129,17 +129,17 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
       type: 'string',
       color: '#000000'
     };
-    
+
     onRulesChange(rules.map(rule =>
       rule.id === ruleId
         ? {
-            ...rule,
-            mappings: [
-              ...rule.mappings.slice(0, index + 1),
-              newMapping,
-              ...rule.mappings.slice(index + 1)
-            ]
-          }
+          ...rule,
+          mappings: [
+            ...rule.mappings.slice(0, index + 1),
+            newMapping,
+            ...rule.mappings.slice(index + 1)
+          ]
+        }
         : rule
     ));
   };
@@ -267,15 +267,13 @@ export const RoleConfigPanel: React.FC<RoleConfigPanelProps> = ({
                       }}
                     />
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: 200 }}>
-                      <PaletteIcon sx={{ mr: 1, color: mapping.color }} />
-                      <TextField
-                        label="颜色"
+                    <Box sx={{ width: 200 }}>
+                      <ColorEditor
                         value={mapping.color}
-                        onChange={(e) => handleMappingChange(rule.id, index, {
-                          color: e.target.value
+                        onChange={(color) => handleMappingChange(rule.id, index, {
+                          color: color
                         })}
-                        fullWidth
+                        label="颜色"
                       />
                     </Box>
 

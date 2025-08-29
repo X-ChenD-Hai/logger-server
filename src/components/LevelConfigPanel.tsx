@@ -15,9 +15,9 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
-  Palette as PaletteIcon,
 } from '@mui/icons-material';
 import { ActionButtons } from './ActionButtons';
+import { ColorEditor } from './ColorEditor';
 import { LevelRule, LevelMapping, generateId, createLevelRule } from '../types/settings';
 
 interface LevelConfigPanelProps {
@@ -124,7 +124,7 @@ export const LevelConfigPanel: React.FC<LevelConfigPanelProps> = ({
 
     const newMappings = [...rule.mappings];
     [newMappings[index], newMappings[newIndex]] = [newMappings[newIndex], newMappings[index]];
-    
+
     onRulesChange(rules.map(r =>
       r.id === ruleId ? { ...r, mappings: newMappings } : r
     ));
@@ -136,17 +136,17 @@ export const LevelConfigPanel: React.FC<LevelConfigPanelProps> = ({
       name: 'NEW',
       color: '#000000'
     };
-    
+
     onRulesChange(rules.map(rule =>
       rule.id === ruleId
         ? {
-            ...rule,
-            mappings: [
-              ...rule.mappings.slice(0, index + 1),
-              newMapping,
-              ...rule.mappings.slice(index + 1)
-            ]
-          }
+          ...rule,
+          mappings: [
+            ...rule.mappings.slice(0, index + 1),
+            newMapping,
+            ...rule.mappings.slice(index + 1)
+          ]
+        }
         : rule
     ));
   };
@@ -267,15 +267,13 @@ export const LevelConfigPanel: React.FC<LevelConfigPanelProps> = ({
                       })}
                       sx={{ flex: 1 }}
                     />
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: 200 }}>
-                      <PaletteIcon sx={{ mr: 1, color: mapping.color }} />
-                      <TextField
-                        label="颜色"
+                    <Box sx={{ width: 120 }}>
+                      <ColorEditor
                         value={mapping.color}
-                        onChange={(e) => handleMappingChange(rule.id, index, {
-                          color: e.target.value
+                        onChange={(color) => handleMappingChange(rule.id, index, {
+                          color: color
                         })}
-                        fullWidth
+                        label="颜色"
                       />
                     </Box>
                     <ActionButtons

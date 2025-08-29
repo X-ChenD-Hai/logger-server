@@ -17,11 +17,11 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
-  Palette as PaletteIcon,
   Code as CodeIcon,
 } from '@mui/icons-material';
 import { TagRule, PatternMapping, generateId, createTagRule } from '../types/settings';
 import { ActionButtons } from './ActionButtons';
+import { ColorEditor } from './ColorEditor';
 
 interface TagConfigPanelProps {
   rules: TagRule[];
@@ -267,15 +267,13 @@ export const TagConfigPanel: React.FC<TagConfigPanelProps> = ({
                       }}
                     />
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: 200 }}>
-                      <PaletteIcon sx={{ mr: 1, color: mapping.color }} />
-                      <TextField
-                        label="颜色"
+                    <Box sx={{ width: 200 }}>
+                      <ColorEditor
                         value={mapping.color}
-                        onChange={(e) => handleMappingChange(rule.id, index, {
-                          color: e.target.value
+                        onChange={(color) => handleMappingChange(rule.id, index, {
+                          color: color
                         })}
-                        fullWidth
+                        label="颜色"
                       />
                     </Box>
 
