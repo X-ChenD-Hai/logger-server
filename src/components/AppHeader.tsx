@@ -37,6 +37,7 @@ interface AppHeaderProps {
   setDarkMode: (darkMode: boolean) => void;
   onSaveLogs: () => void;
   onLoadLogs: () => void;
+  statusMessage?: string;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -52,6 +53,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   setDarkMode,
   onSaveLogs,
   onLoadLogs,
+  statusMessage,
 }) => {
   return (
     <AppBar position="static" elevation={0}>
@@ -106,6 +108,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               Messages
             </Typography>
           </Badge>
+
+          {/* Status Message */}
+          {statusMessage && (
+            <Typography
+              variant="caption"
+              sx={{
+                ml: 2,
+                color: statusMessage.includes('Error') ? 'error.light' : 'success.light',
+                fontWeight: 'medium'
+              }}
+            >
+              {statusMessage}
+            </Typography>
+          )}
         </Box>
 
         {/* Save Logs Button */}

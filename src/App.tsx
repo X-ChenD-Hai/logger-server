@@ -5,13 +5,10 @@ import {
   ThemeProvider,
   CssBaseline,
   Container,
-  Typography,
-  Paper,
   Box,
 } from "@mui/material";
 import { lightTheme, darkTheme } from "./theme";
 import { LogMessage, LogMessageUtils } from "./types";
-import { LogMessageItem } from "./components/LogMessageItem";
 import { AppHeader } from "./components/AppHeader";
 import { SettingsPage } from "./components/SettingsPage";
 import {
@@ -19,6 +16,7 @@ import {
   RoleRule,
   TagRule,
 } from "./types/settings";
+import { LogViewer, FilterConfig } from "./components/LogViewer";
 
 interface ServerStatus {
   running: boolean;
@@ -33,10 +31,13 @@ function App() {
   const [levelRules, setLevelRules] = useState<LevelRule[]>([]);
   const [roleRules, setRoleRules] = useState<RoleRule[]>([]);
   const [tagRules, setTagRules] = useState<TagRule[]>([]);
-  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterConfig[]>([]);
+  const [sortField, setSortField] = useState("time");
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // 保存配置到后端存储
   const saveConfigToBackend = async (key: string, value: any) => {
@@ -168,17 +169,6 @@ function App() {
     }
   }
 
-  const handleToggleExpand = (timestamp: number) => {
-    setExpandedMessages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(timestamp)) {
-        newSet.delete(timestamp);
-      } else {
-        newSet.add(timestamp);
-      }
-      return newSet;
-    });
-  };
 
   // 保存日志消息到后端
   const saveLogMessages = async () => {
@@ -290,6 +280,7 @@ function App() {
           setDarkMode={setDarkMode}
           onSaveLogs={saveLogMessages}
           onLoadLogs={loadLogMessages}
+          statusMessage={statusMessage}
         />
 
         {showSettings ? (
@@ -309,51 +300,23 @@ function App() {
             flexDirection: 'column',
             minHeight: 0
           }}>
-            {/* Status Message */}
-            {statusMessage && (
-              <Paper sx={{
-                p: 1,
-                mb: 2,
-                backgroundColor: statusMessage.includes('Error') ? 'error.light' : 'success.light',
-                color: statusMessage.includes('Error') ? 'error.contrastText' : 'success.contrastText'
-              }}>
-                <Typography variant="body2" align="center">
-                  {statusMessage}
-                </Typography>
-              </Paper>
-            )}
-
-            {/* Messages Section */}
-            <Paper sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}>
-              <Box className="log-container" sx={{
-                flex: 1,
-                overflow: 'auto',
-                p: 2
-              }}>
-                {receivedMessages.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
-                    No messages received yet
-                  </Typography>
-                ) : (
-                  receivedMessages.map((message, index) => (
-                    <LogMessageItem
-                      key={index}
-                      message={message}
-                      levelRules={levelRules}
-                      roleRules={roleRules}
-                      tagRules={tagRules}
-                      expanded={expandedMessages.has(message.time)}
-                      onToggleExpand={handleToggleExpand}
-                    />
-                  ))
-                )}
-              </Box>
-            </Paper>
+            {/* Log Viewer Component */}
+            <LogViewer
+              messages={receivedMessages}
+              levelRules={levelRules}
+              roleRules={roleRules}
+              tagRules={tagRules}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              filters={filters}
+              onFiltersChange={setFilters}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSortChange={(field, direction) => {
+                setSortField(field);
+                setSortDirection(direction);
+              }}
+            />
           </Container>
         )}
       </Box>
